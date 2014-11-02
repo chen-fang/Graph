@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		710E58B31A06CDCF001DAAD7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 710E58B21A06CDCF001DAAD7 /* main.cpp */; };
+		710E58BB1A06D9E2001DAAD7 /* multimap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 710E58BA1A06D9E2001DAAD7 /* multimap.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +24,8 @@
 
 /* Begin PBXFileReference section */
 		710E58AF1A06CDCE001DAAD7 /* Graph */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Graph; sourceTree = BUILT_PRODUCTS_DIR; };
-		710E58B21A06CDCF001DAAD7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		710E58B91A06D9E2001DAAD7 /* Bipartite.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Bipartite.hpp; sourceTree = "<group>"; };
+		710E58BA1A06D9E2001DAAD7 /* multimap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multimap.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +58,8 @@
 		710E58B11A06CDCE001DAAD7 /* Graph */ = {
 			isa = PBXGroup;
 			children = (
-				710E58B21A06CDCF001DAAD7 /* main.cpp */,
+				710E58B91A06D9E2001DAAD7 /* Bipartite.hpp */,
+				710E58BA1A06D9E2001DAAD7 /* multimap.cpp */,
 			);
 			path = Graph;
 			sourceTree = "<group>";
@@ -118,7 +120,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				710E58B31A06CDCF001DAAD7 /* main.cpp in Sources */,
+				710E58BB1A06D9E2001DAAD7 /* multimap.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +234,7 @@
 				710E58B81A06CDCF001DAAD7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

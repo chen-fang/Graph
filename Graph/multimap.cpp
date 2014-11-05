@@ -2,21 +2,21 @@
 #include <iostream>
 #include "Bipartite.hpp"
 
+typedef vector< __vertex_type > graph_type;
+typedef vector< vector<index_t> > seed_type;
 
 int main()
 {
-   multimap<std::size_t, std::size_t> Seed;
-   multimap<std::size_t,std::size_t> Graph;
+    graph_type Graph;
+    seed_type Seed;
 
-   std::size_t Nx = 2;
-   std::size_t Ny = 2;
-   std::size_t Nz = 2;
-   std::size_t NumVar = Nx * Ny * Nz;
-   std::size_t NumColor;
-   Bipartite_Cartesian( Graph, Nx, Ny, Nz, NumColor );
-   std::cout << NumColor << std::endl;
-
-
-   Seeding::Get_Seed_Matrix( Graph, Seed, NumVar, NumColor );
+    std::size_t Nx = 4;
+    std::size_t Ny = 4;
+    std::size_t Nz = 3;
+    
+    Bipartite_Cartesian( Graph, Nx, Ny, Nz );
+    
+    Seeding::Init(Graph, Seed);
+    Seeding::Coloring( Graph );
 
 }

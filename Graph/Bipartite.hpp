@@ -9,32 +9,62 @@ using std::vector;
 typedef int color_t;
 typedef size_t index_t;
 
-struct __vertex_type
+class Seeding
 {
-   int color;
-   vector<index_t> connection;
-    
-   void assign_color ( color_t _color )
+   struct __vertex_type
    {
-      color = _color;
-   }
+      color_t color;
+      vector<index_t> connection;
     
-   void assign_vertex ( index_t _vertex_index )
-   {
-      connection.push_back(_vertex_index);
-   }
+      void assign_color ( color_t _color )
+      {
+	 color = _color;
+      }
     
-   void assign ( color_t _color, index_t _vertex_index )
-   {
-      assign_color(_color);
-      assign_vertex(_vertex_index);
-   }
+      void assign_vertex ( index_t _vertex_index )
+      {
+	 connection.push_back(_vertex_index);
+      }
+    
+      void assign ( color_t _color, index_t _vertex_index )
+      {
+	 assign_color(_color);
+	 assign_vertex(_vertex_index);
+      }
+   };
+
+   // Data
+   typedef vector< __vertex_type > graph_type;
+   graph_type Graph;
+
+public:
+   // policy can be added to tackle with various discretization domains
+   inline void Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn = 1 );
+   inline void Coloring ();
+   inline void Recovery ( const vector<double>& old_value,
+			  vector<int>& new_rowptr,
+			  vector<int>& new_colind, vector<double>& new_value );
+
+   // data access
+   color_t Color ( index_t i ) const;
+
+
+   void Print ();
+
+private:
+   inline void Sort ();
+   inline void Init ();
+   inline size_t Get_Max_Color () const;
 };
 
-typedef vector< __vertex_type > graph_type;
-typedef vector< vector<index_t> > seed_type;
 
-void Bipartite_Cartesian ( graph_type& Graph, size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn = 1 )
+
+
+
+// ========================================================= 
+// ===================== public functions ==================
+//
+void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn )
 {
    if ( !Graph.empty() )
    {
@@ -113,7 +143,6 @@ void Bipartite_Cartesian ( graph_type& Graph, size_t _Nx, size_t _Ny, size_t _Nz
       }
    }
    // Itself
-
    for (i=0; i < n_cells; ++i)
    {
       row = i;
@@ -129,91 +158,17 @@ void Bipartite_Cartesian ( graph_type& Graph, size_t _Nx, size_t _Ny, size_t _Nz
 //        }
    }
     
-
-}
-
-// Sort
-void Sort ( graph_type& Graph )
-{
-   vector<index_t>::iterator iter_begin, iter_end;
-   for ( index_t i = 0; i < Graph.size(); ++i )
-   {
-      iter_begin = Graph[i].connection.begin();
-      iter_end = Graph[i].connection.end();
-      std::sort( iter_begin, iter_end );
-   }
-}
-
-// Print
-void Print ( const graph_type& Graph )
-{
-   std::cout << "*********** Graph Summary ************"<< std::endl;
-   for ( index_t i = 0; i < Graph.size(); ++i )
-   {
-      std::cout << "-------- " << i << " ------> Color: " << Graph[i].color << std::endl;
-      size_t sz = Graph[i].connection.size();
-      for ( index_t j = 0; j < sz; ++j )
-      {
-	 std::cout << Graph[i].connection[j] << std::endl;
-      }
-   }
+   // Sort "connection"
+   Sort();
 }
 
 
-
-struct Seeding
+void Seeding::Coloring ()
 {
-   static size_t Get_Max_Color( const graph_type& Graph );
-   static void Init( graph_type& Graph, seed_type& Seed );
-   static void Coloring( graph_type& Graph );
-   static void Recovery( const graph_type& Graph, const vector<double>& old_value,
-			 vector<int>& new_rowptr,
-			 vector<int>& new_colind, vector<double>& new_value );
-//    static void Get_Seed_Matrix( const Map& Graph, seed_type& Seed, size_t NumVar, size_t NumColor );
-};
+   // initialize colors
+   Init();
 
-size_t Seeding::Get_Max_Color( const graph_type& Graph )
-{
-   size_t max_degree = 0;
-   size_t tmp;
-   index_t i = 0;
-   size_t N = Graph.size();
-
-   for( i = 0; i < N; ++i )
-   {
-      tmp = Graph[i].connection.size();
-      max_degree = ( max_degree >= tmp ) ? max_degree : tmp;
-   }
-   max_degree = max_degree * max_degree + 1;
-   return ( max_degree <= N ? max_degree : N );
-}
-
-void Seeding::Init( graph_type& Graph, seed_type& Seed )
-{
-   if( !Seed.empty() )
-   {
-      Seed.clear();
-   }
-   size_t max_color = Get_Max_Color( Graph );
-   Seed.resize( max_color );
-    
-   color_t color(0);
-   graph_type :: const_iterator iter = Graph.begin();
-    
-   size_t n_distance1_vertex = (*iter).connection.size();
-   size_t i;
-   for ( i = 0; i < n_distance1_vertex; ++i )
-   {
-      index_t distance1_vertex = (*iter).connection[i];
-      Graph[ distance1_vertex ].assign_color(color);
-      //Seed[color].push_back( distance1_vertex );
-      ++color;
-   }
-}
-
-void Seeding::Coloring( graph_type& Graph )
-{
-   const size_t max_color = Get_Max_Color( Graph );
+   const size_t max_color = Get_Max_Color();
    vector<bool> Palette;
    Palette.resize( max_color );
    Palette.assign( max_color, true );
@@ -273,46 +228,159 @@ void Seeding::Coloring( graph_type& Graph )
 }
 
 
-
-//void Seeding::Get_Seed_Matrix( const Map& Graph, Map& Seed, size_t NumVar, size_t NumColor)
-//{
-//    vector<color_t> Index_Color;
-//    Index_Color.reserve( NumVar );
-//    Index_Color.assign( NumVar, -1 );
-//    
-//    Init( Graph, Seed, Index_Color );
-//    Coloring( Graph, Seed, Index_Color, NumColor );
-//}
-
-
-void Seeding::Recovery( const graph_type& Graph, const vector<double>& old_value,
+/*
+ * Recovery()
+ *
+ * Proposed:
+ * Receive an ADvector parameter, and extract values & gradients
+ * DIRECTLY from ADscalars and store them into "CSR_Matrix"
+ *
+ * Current implementation:
+ * The default routine "extract_CSR" within the ADvector is called first
+ * to obtain the "compressed" version of data in CSR format.
+ * Then this "compressed" version of data is modified so that the values
+ * sit into their real positions
+ */
+void Seeding::Recovery( const vector<double>& old_value,
 			vector<int>& new_rowptr,
 			vector<int>& new_colind, vector<double>& new_value )
 {
    new_rowptr.clear();
-   new_rowptr.resize( Graph.size() );
+   new_rowptr.reserve( Graph.size() );
    new_colind.clear();
    // ...
    new_value.clear();
-   new_value.resize( old_value.size() );
+   new_value.reserve( old_value.size() );
 
-   size_t counter_row = 0;
-   size_t counter_elem = 0;
-   new_rowptr.push_back( counter_row );
+   size_t counter_nnz = 0;
+   new_rowptr.push_back( counter_nnz );
    for( size_t i = 0; i < Graph.size(); ++i )
    {
       for( size_t j = 0; j < Graph[i].connection.size(); ++j )
       {
 	 index_t col = Graph[i].connection[j];
-	 new_colind.push_back( col ); // copy
+	 new_colind.push_back( col ); // copy...faster?
 
-	 // "color" tells which column it is in the extracted array
+	 // "color" tells which column it is in the compressed array
 	 color_t color = Graph[col].color;
-	 new_value.push_back( old_value[ counter_row + color ];
+	 new_value.push_back( old_value[ counter_nnz + color ] );
       }
 
-      counter_row += Graph[i].connection.size();
-      new_rowptr.push_back( counter_row );
+      counter_nnz += Graph[i].connection.size();
+      new_rowptr.push_back( counter_nnz );
 
    }
 }
+
+
+
+
+color_t Seeding::Color ( index_t i ) const
+{
+   return Graph[i].color;
+}
+
+
+
+
+// ============== end of public functions ==================
+
+
+
+
+// ==========================================================
+// ================= private functions ======================
+/*
+ * Sort()
+ * Sort the "connection" vector associated with each vertex
+ * to provide convenience & efficient in following operations
+ */
+void Seeding::Sort ()
+{
+   vector<index_t>::iterator iter_begin, iter_end;
+   for ( index_t i = 0; i < Graph.size(); ++i )
+   {
+      iter_begin = Graph[i].connection.begin();
+      iter_end = Graph[i].connection.end();
+      std::sort( iter_begin, iter_end );
+   }
+}
+
+/*
+ * Init()
+ * Assign colors to vertices that are distance-1 to the very 1st vertex
+ */
+void Seeding::Init ()
+{
+   size_t max_color = Get_Max_Color();
+    
+   color_t color(0);
+   graph_type :: const_iterator iter = Graph.begin();
+    
+   size_t n_distance1_vertex = (*iter).connection.size();
+   for ( index_t i = 0; i < n_distance1_vertex; ++i )
+   {
+      index_t distance1_vertex = (*iter).connection[i];
+      Graph[ distance1_vertex ].assign_color(color);
+      ++color;
+   }
+}
+
+/*
+ * Get_Max_Color()
+ * Get the upper bound of colors to be assinged to vertices
+ */
+size_t Seeding::Get_Max_Color () const
+{
+   size_t max_degree = 0;
+   size_t tmp;
+   size_t N = Graph.size();
+
+   for( index_t i = 0; i < N; ++i )
+   {
+      tmp = Graph[i].connection.size();
+      max_degree = ( max_degree >= tmp ) ? max_degree : tmp;
+   }
+   max_degree = max_degree * max_degree + 1;
+   return ( max_degree <= N ? max_degree : N );
+}
+// ============== end of private functions ====================
+// ============================================================
+
+
+
+
+
+
+
+
+
+// Print
+template< typename T >
+void Print_Vector ( const T& vec )
+{
+   for( size_t i = 0; i < vec.size(); ++i )
+   {
+      std::cout << vec[i] << std::endl;
+   }
+   std::cout << std::endl;
+}
+
+void Seeding::Print ()
+{
+   std::cout << "*********** Graph Summary ************"<< std::endl;
+   for ( index_t i = 0; i < Graph.size(); ++i )
+   {
+      std::cout << "-------- " << i << " ------> Color: " << Graph[i].color << std::endl;
+      size_t sz = Graph[i].connection.size();
+      for ( index_t j = 0; j < sz; ++j )
+      {
+	 std::cout << Graph[i].connection[j] << std::endl;
+      }
+   }
+}
+
+
+
+
+

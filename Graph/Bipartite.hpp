@@ -33,81 +33,118 @@ struct __vertex_type
 typedef vector< __vertex_type > graph_type;
 typedef vector< vector<index_t> > seed_type;
 
-void Bipartite_Cartesian ( graph_type& Graph, size_t _Nx, size_t _Ny, size_t _Nz )
+void Bipartite_Cartesian ( graph_type& Graph, size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn = 1 )
 {
-    std::cout << "Bipartite_Cartesian" << std::endl;
     if ( !Graph.empty() )
     {
         Graph.clear();
     }
-    size_t N = _Nx * _Ny * _Nz;
-    Graph.resize( N );
-    index_t _row, _col;
-    index_t i, j, k;
+    size_t n_cells = _Nx * _Ny * _Nz;
+    Graph.resize( n_cells * _n_eqn );
+    index_t row, col;
+    index_t i, j, k, m;
     
     // 1st direction in all layers
-    for (k=0; k < _Nz; ++k)
+    for ( k = 0; k < _Nz; ++k )
     {
-        for (j=0; j < _Ny; ++j)
+        for ( j = 0; j < _Ny; ++j )
         {
-            for (i=0; i < _Nx-1; ++i)
+            for ( i = 0; i < _Nx-1; ++i )
             {
-                _row = i + j*_Nx + k*_Nx*_Ny;
-                _col = _row + 1;
-                Graph[_row].assign(-1, _col);
-                Graph[_col].assign(-1, _row);
+                row = i + j*_Nx + k*_Nx*_Ny;
+                col = row + 1;
+                Graph[row].assign(-1, col);
+                Graph[col].assign(-1, row);
+                
+//                row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
+//                col = ( row + 1 ) * _n_eqn;
+//                for( m = 0; m < _n_eqn; ++m )
+//                {
+//                    Graph[row+m].assign(-1, col+m);
+//                    Graph[col+m].assign(-1, row+m);
+//                }
             }
         }
     }
     // 2nd direction in all layers
-    for (k=0; k < _Nz; ++k)
+    for ( k = 0; k < _Nz; ++k )
     {
-        for (j=0; j < _Ny-1; ++j)
+        for ( j = 0; j < _Ny-1; ++j )
         {
-            for (i=0; i < _Nx; ++i)
+            for ( i = 0; i < _Nx; ++i )
             {
-                _row = i + j*_Nx + k*_Nx*_Ny;
-                _col = _row + _Nx;
-                Graph[_row].assign(-1, _col);
-                Graph[_col].assign(-1, _row);
+                row = i + j*_Nx + k*_Nx*_Ny;
+                col = row + _Nx;
+                Graph[row].assign(-1, col);
+                Graph[col].assign(-1, row);
+                
+//                row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
+//                col = ( row + _Nx ) * _n_eqn;
+//                for( m = 0; m < _n_eqn; ++m )
+//                {
+//                    Graph[row+m].assign(-1, col+m);
+//                    Graph[col+m].assign(-1, row+m);
+//                }
             }
         }
     }
     // 3rd direction
-    for (index_t k=0; k < _Nz-1; ++k)
+    for ( k = 0; k < _Nz-1; ++k )
     {
-        for (index_t j=0; j < _Ny; ++j)
+        for ( j = 0; j < _Ny; ++j )
         {
-            for (index_t i=0; i < _Nx; ++i)
+            for ( i = 0; i < _Nx; ++i )
             {
-                _row = i + j*_Nx + k*_Nx*_Ny;
-                _col = _row + _Nx * _Ny;
-                Graph[_row].assign(-1, _col);
-                Graph[_col].assign(-1, _row);
+                row = i + j*_Nx + k*_Nx*_Ny;
+                col = row + _Nx * _Ny;
+                Graph[row].assign(-1, col);
+                Graph[col].assign(-1, row);
+                
+//                row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
+//                col = ( row + _Nx * _Ny ) * _n_eqn;
+//                for( m = 0; m < _n_eqn; ++m )
+//                {
+//                    Graph[row+m].assign(-1, col+m);
+//                    Graph[col+m].assign(-1, row+m);
+//                }
+
             }
         }
     }
     // Itself
 
-    for (i=0; i < N; ++i)
+    for (i=0; i < n_cells; ++i)
     {
-        Graph[i].assign(-1, i);
+        row = i;
+        col = row;
+        Graph[row].assign(-1, col);
+        
+//        row = i * _n_eqn;
+//        col = row;
+//        for( m = 0; m < _n_eqn; ++m )
+//        {
+//            Graph[row+m].assign(-1, col+m);
+//            Graph[col+m].assign(-1, row+m);
+//        }
     }
     
-    // Print
-    for ( i = 0; i < N; ++i )
-    {
-        size_t sz = Graph[i].connection.size();
-        for ( j = 0; j < sz; ++j )
-        {
-            std::cout << i << "\t" << Graph[i].connection[j] << std::endl;
-        }
-    }
-    std::cout << "SZ\t" << Graph.size() << std::endl;
+
 }
 
-
-
+// Print
+void Print ( const graph_type& Graph )
+{
+    std::cout << "*********** Graph Summary ************"<< std::endl;
+    for ( index_t i = 0; i < Graph.size(); ++i )
+    {
+        std::cout << "-------- " << i << " ------> Color: " << Graph[i].color << std::endl;
+        size_t sz = Graph[i].connection.size();
+        for ( index_t j = 0; j < sz; ++j )
+        {
+            std::cout << Graph[i].connection[j] << std::endl;
+        }
+    }
+}
 
 
 
@@ -125,7 +162,7 @@ size_t Seeding::Get_Max_Color( const graph_type& Graph )
     size_t tmp;
     index_t i = 0;
     size_t N = Graph.size();
-    std::cout << "N:\t" << N << std::endl;
+
     for( i = 0; i < N; ++i )
     {
         tmp = Graph[i].connection.size();
@@ -137,7 +174,6 @@ size_t Seeding::Get_Max_Color( const graph_type& Graph )
 
 void Seeding::Init( graph_type& Graph, seed_type& Seed )
 {
-    std::cout << "Seeding::Init ----------" << std::endl;
     if( !Seed.empty() )
     {
         Seed.clear();
@@ -145,22 +181,16 @@ void Seeding::Init( graph_type& Graph, seed_type& Seed )
     size_t max_color = Get_Max_Color( Graph );
     Seed.resize( max_color );
     
-    std::cout << "max_color = " << max_color << std::endl;
-    std::cout << "Seed.size = " << Seed.size() << std::endl;
-    
     color_t color(0);
     graph_type :: const_iterator iter = Graph.begin();
     
-    size_t n_vertex = (*iter).connection.size();
+    size_t n_distance1_vertex = (*iter).connection.size();
     size_t i;
-    for ( i = 0; i < n_vertex; ++i )
+    for ( i = 0; i < n_distance1_vertex; ++i )
     {
-        index_t connected_vertex = (*iter).connection[i];
-        Graph[ connected_vertex ].assign_color(color);
-        Seed[color].push_back( connected_vertex );
-        
-        std::cout << "Seed:\t" << color << "\t" << connected_vertex << std::endl;
-        
+        index_t distance1_vertex = (*iter).connection[i];
+        Graph[ distance1_vertex ].assign_color(color);
+        //Seed[color].push_back( distance1_vertex );
         ++color;
     }
 }
@@ -176,7 +206,7 @@ void Seeding::Coloring( graph_type& Graph )
     index_t i;
     for( i = 0; i < N; ++i )
     {
-        std::cout << "Vertex --------------------------------------------" << i << std::endl;
+//        std::cout << "Vertex --------------------------------------------" << i << std::endl;
         if( Graph[i].color == -1 )
         {
             size_t n_distance1_index = Graph[i].connection.size();
@@ -197,7 +227,6 @@ void Seeding::Coloring( graph_type& Graph )
                     if( c_vertex != -1 )
                     {
                         Palette[c_vertex] = false;
-                        std::cout << "Forbidden Color:\t" << c_vertex << std::endl;
                     }
                 }
               }
@@ -211,7 +240,6 @@ void Seeding::Coloring( graph_type& Graph )
                 if( Palette[k] != false )
                 {
                     min_color = k;
-                    std::cout << "selected color: " << k << std::endl;
                     break;
                 }
             }
@@ -224,9 +252,7 @@ void Seeding::Coloring( graph_type& Graph )
         }//end_of_if_statement
         else
         {
-            std::cout << "Already has color:\t" << Graph[i].color << std::endl;
         }
-        std::cout << std::endl;
     }
 }
 

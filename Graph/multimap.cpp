@@ -2,11 +2,11 @@
 #include <iostream>
 #include "Bipartite.hpp"
 
-//#include "/home/blackicefc/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
-//#include "/home/blackicefc/ADETL_DISTRO/adetl/systems/ADvector.hpp"
+#include "/home/blackicefc/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
+#include "/home/blackicefc/ADETL_DISTRO/adetl/systems/ADvector.hpp"
 
-#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
-#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/systems/ADvector.hpp"
+//#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
+//#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/systems/ADvector.hpp"
 
 
 typedef adetl::ADscalar<> ADscalar;
@@ -16,16 +16,30 @@ using std::vector;
 
 int main()
 {
+   std::cout << "---------------- access gradient -----------------" << std::endl;
 
-   std::size_t Nx = 300;
-   std::size_t Ny = 300;
-   std::size_t Nz = 300;
+   std::size_t N = 10000;
+   ADscalar a,b;
+   a.make_independent( 0 );
+   b.make_independent( 9000 );
 
-   Seeding S;
+   a += b;
+   std::cout << a.gradient().size() << std::endl;
+   std::cout << std::endl;
+
+   std::cout << a.derivative(0) << std::endl;
+   std::cout << a.derivative(9000) << std::endl;
+
+
+   // std::size_t Nx = 10;
+   // std::size_t Ny = 1;
+   // std::size_t Nz = 1;
+
+   // Seeding S;
     
-   S.Build_BipartiteGraph( Nx, Ny, Nz );
-   S.Coloring();
-   //S.Print();
+   // S.Build_BipartiteGraph( Nx, Ny, Nz );
+   // S.Coloring();
+   // S.Print();
 
 
    // std::size_t N = Nx * Ny * Nz;
@@ -37,6 +51,7 @@ int main()
    // {
    //    vec1[i].make_independent( S.Color(i) );
    // }
+
 
    // vec2[0] = vec1[0] + vec1[1];
    // vec2[1] = vec1[0] + vec1[1] + vec1[2];

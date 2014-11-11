@@ -2,11 +2,11 @@
 #include <iostream>
 #include "Graph.hpp"
 
-//#include "/home/blackicefc/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
-//#include "/home/blackicefc/ADETL_DISTRO/adetl/systems/ADvector.hpp"
+#include "/home/blackicefc/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
+#include "/home/blackicefc/ADETL_DISTRO/adetl/systems/ADvector.hpp"
 
-#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
-#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/systems/ADvector.hpp"
+//#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
+//#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/systems/ADvector.hpp"
 
 
 typedef adetl::ADscalar<> ADscalar;
@@ -39,11 +39,33 @@ int main()
    }
 
 
+   // [ 5 1 1 ] Case #1
    vec2[0] = vec1[0] + vec1[1];
    vec2[1] = vec1[0] + vec1[1] + vec1[2];
    vec2[2] = vec1[1] + vec1[2] + vec1[3];
    vec2[3] = vec1[2] + vec1[3] + vec1[4];
    vec2[4] = vec1[3] + vec1[4];
+
+   // [ 5 1 1 ] Case #2
+   vec2[0] = vec1[0];
+   vec2[1] = vec1[0] + vec1[1];
+   vec2[2] = vec1[1] + vec1[2];
+   vec2[3] = vec1[2] + vec1[3];
+   vec2[4] = vec1[3] + vec1[4];
+
+   // [ 5 2 1 ]
+   // vec2[0] = vec1[0] + vec1[1] + vec1[5];
+   // vec2[1] = vec1[0] + vec1[1] + vec1[2] + vec1[6];
+   // vec2[2] = vec1[1] + vec1[2] + vec1[3] + vec1[7];
+   // vec2[3] = vec1[2] + vec1[3] + vec1[4] + vec1[8];
+   // vec2[4] = vec1[3] + vec1[4] + vec1[9];
+   // // continue
+   // vec2[5] = vec1[0] + vec1[5] + vec1[6];
+   // vec2[6] = vec1[1] + vec1[5] + vec1[6] + vec1[7];
+   // vec2[7] = vec1[2] + vec1[6] + vec1[7] + vec1[8];
+   // vec2[8] = vec1[3] + vec1[7] + vec1[8] + vec1[9];
+   // vec2[9] = vec1[4] + vec1[8] + vec1[9];
+
 
    for( std::size_t i = 0; i < N; ++i )
    {
@@ -65,9 +87,13 @@ int main()
 
    std::cout << "--------------- After Recovery -------------------" << std::endl;
    CSR_Matrix CSR;
-   S.Recovery( vec2, CSR );
+   vector<double> residual;
+   S.Recover_CSR( vec2, residual, CSR );
    
    Print_Vector( CSR.rowptr() );
-   // Print_Vector( CSR.colind() );
-   // Print_Vector( CSR.value() );
+   Print_Vector( CSR.colind() );
+   Print_Vector( CSR.value() );
+   Print_Vector( residual );
+
+   S.Recover_CSR( vec2, residual, CSR );
 }

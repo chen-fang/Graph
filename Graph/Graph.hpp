@@ -54,8 +54,8 @@ public:
    inline void Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn = 1 );
    inline void Coloring ();
 
-   template< typename T >
-   inline void Recovery ( const T& source, CSR_Matrix& CSR );
+   template< typename T, typename V, typename M >
+   inline void Recover_CSR ( const T& source, V& residual, M& CSR );
 
    // data access
    color_t Color ( index_t i ) const;
@@ -66,7 +66,6 @@ public:
 private:
    inline void Sort ();
    inline void Init ();
-   inline void Initialize_CSR ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn );
    inline size_t Get_Max_Color () const;
 };
 
@@ -77,105 +76,101 @@ private:
 // ========================================================= 
 // ===================== public functions ==================
 //
-void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn )
+void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _Neqn )
 {
    if ( !Graph.empty() )
    {
       Graph.clear();
    }
-   size_t n_cells = _Nx * _Ny * _Nz;
-   Graph.resize( n_cells * _n_eqn );
-   index_t row, col;
-   index_t i, j, k, m;
-    
+   const size_t n_cells = _Nx * _Ny * _Nz;
+   Graph.resize( n_cells * _Neqn );
+
+   index_t block_row, block_col;
    // 1st direction in all layers
-   for ( k = 0; k < _Nz; ++k )
+   for ( index_t k = 0; k < _Nz; ++k )
    {
-      for ( j = 0; j < _Ny; ++j )
+      for ( index_t j = 0; j < _Ny; ++j )
       {
-	 for ( i = 0; i < _Nx-1; ++i )
+	 for ( index_t i = 0; i < _Nx-1; ++i )
 	 {
-	    row = i + j*_Nx + k*_Nx*_Ny;
-	    col = row + 1;
-	    Graph[row].assign(-1, col);
-	    Graph[col].assign(-1, row);
+	    block_row = i + j*_Nx + k*_Nx*_Ny;
+	    block_block_col = row + 1;
+	    Graph[block_row].assign(-1, block_col);
+	    Graph[block_col].assign(-1, block_row);
                 
-//                row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
-//                col = ( row + 1 ) * _n_eqn;
+//                block_row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
+//                block_col = ( block_row + 1 ) * _n_eqn;
 //                for( m = 0; m < _n_eqn; ++m )
 //                {
-//                    Graph[row+m].assign(-1, col+m);
-//                    Graph[col+m].assign(-1, row+m);
+//                    Graph[block_row+m].assign(-1, block_col+m);
+//                    Graph[block_col+m].assign(-1, block_row+m);
 //                }
 	 }
       }
    }
    // 2nd direction in all layers
-   for ( k = 0; k < _Nz; ++k )
+   for ( index_t k = 0; k < _Nz; ++k )
    {
-      for ( j = 0; j < _Ny-1; ++j )
+      for ( index_t j = 0; j < _Ny-1; ++j )
       {
-	 for ( i = 0; i < _Nx; ++i )
+	 for ( index_t i = 0; i < _Nx; ++i )
 	 {
-	    row = i + j*_Nx + k*_Nx*_Ny;
-	    col = row + _Nx;
-	    Graph[row].assign(-1, col);
-	    Graph[col].assign(-1, row);
+	    block_row = i + j*_Nx + k*_Nx*_Ny;
+	    block_col = block_row + _Nx;
+	    Graph[block_row].assign(-1, block_col);
+	    Graph[block_col].assign(-1, block_row);
                 
-//                row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
-//                col = ( row + _Nx ) * _n_eqn;
+//                block_row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
+//                block_col = ( block_row + _Nx ) * _n_eqn;
 //                for( m = 0; m < _n_eqn; ++m )
 //                {
-//                    Graph[row+m].assign(-1, col+m);
-//                    Graph[col+m].assign(-1, row+m);
+//                    Graph[block_row+m].assign(-1, block_col+m);
+//                    Graph[block_col+m].assign(-1, block_row+m);
 //                }
 	 }
       }
    }
    // 3rd direction
-   for ( k = 0; k < _Nz-1; ++k )
+   for ( index_t k = 0; k < _Nz-1; ++k )
    {
-      for ( j = 0; j < _Ny; ++j )
+      for ( index_t j = 0; j < _Ny; ++j )
       {
-	 for ( i = 0; i < _Nx; ++i )
+	 for ( index_t i = 0; i < _Nx; ++i )
 	 {
-	    row = i + j*_Nx + k*_Nx*_Ny;
-	    col = row + _Nx * _Ny;
-	    Graph[row].assign(-1, col);
-	    Graph[col].assign(-1, row);
+	    block_row = i + j*_Nx + k*_Nx*_Ny;
+	    block_col = block_row + _Nx * _Ny;
+	    Graph[block_row].assign(-1, block_col);
+	    Graph[block_col].assign(-1, block_row);
                 
-//                row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
-//                col = ( row + _Nx * _Ny ) * _n_eqn;
+//                block_row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
+//                block_col = ( block_row + _Nx * _Ny ) * _n_eqn;
 //                for( m = 0; m < _n_eqn; ++m )
 //                {
-//                    Graph[row+m].assign(-1, col+m);
-//                    Graph[col+m].assign(-1, row+m);
+//                    Graph[block_row+m].assign(-1, block_col+m);
+//                    Graph[block_col+m].assign(-1, block_row+m);
 //                }
 
 	 }
       }
    }
    // Itself
-   for (i=0; i < n_cells; ++i)
+   for ( index_t i = 0; i < n_cells; ++i )
    {
-      row = i;
-      col = row;
-      Graph[row].assign(-1, col);
+      block_row = i;
+      block_col = block_row;
+      Graph[block_row].assign(-1, block_col);
         
-//        row = i * _n_eqn;
-//        col = row;
+//        block_row = i * _n_eqn;
+//        block_col = block_row;
 //        for( m = 0; m < _n_eqn; ++m )
 //        {
-//            Graph[row+m].assign(-1, col+m);
-//            Graph[col+m].assign(-1, row+m);
+//            Graph[block_row+m].assign(-1, block_col+m);
+//            Graph[block_col+m].assign(-1, block_row+m);
 //        }
    }
     
    // Sort "connection"
    Sort();
-
-   // Initialize CSR_Matrix
-   Initialize_CSR( _Nx, _Ny, _Nz, _n_eqn );
 }
 
 
@@ -239,6 +234,7 @@ void Seeding::Coloring ()
       }//end_of_if_statement
       else
       {
+	 // do nothing
       }
    }
 }
@@ -260,8 +256,10 @@ void Seeding::Coloring ()
 template< typename T, typename V, typename M >
 void Seeding::Recover_CSR ( const T& source, V& residual, M& CSR )
 {
+   static bool is_first = true;
+   std::cout << "is_first\t" << is_first << std::endl;
    // update CSR.rowptr() & CSR.colptr() ONLY for the first time
-   if( CSR.rowptr.empty() )
+   if( is_first )
    {
       if( !CSR.rowptr().is_empty() )
 	 CSR.rowptr().clear();
@@ -275,7 +273,6 @@ void Seeding::Recover_CSR ( const T& source, V& residual, M& CSR )
 
       size_t counter_nnz = 0;
       CSR.rowptr().push_back( counter_nnz );
-      std::cout << "counter_nnz: " << counter_nnz << std::endl;
 
       for( size_t i = 0; i < Graph.size(); ++i )
       {
@@ -287,31 +284,34 @@ void Seeding::Recover_CSR ( const T& source, V& residual, M& CSR )
 	 }
 	 counter_nnz += Graph[i].connection.size();
 	 CSR.rowptr().push_back( counter_nnz );
-
-	 std::cout << "counter_nnz: " << counter_nnz << std::endl;
       }
 
+      is_first = false;
    }
 
 
    // update residual & CSR.value()
-   residual.resize( CSR.rowptr().size() );
+   if( !residual.empty() )
+      residual.clear();
+   residual.reserve( Graph.size() );
 
    if( !CSR.value().is_empty() )
       CSR.value().clear();
    CSR.value().reserve( CSR.colind().size() );
 
-   index_t col;
-   color_t color;
+
    for( size_t i = 0; i < Graph.size(); ++i )
    {
-      residual[i] = source[i].value();
+      residual.push_back( source[i].value() );
+
+      index_t col;
+      color_t color;
       for( size_t j = 0; j < Graph[i].connection.size(); ++j )
       {
 	 col = Graph[i].connection[j];
 	 // "color" tells which column it ivoids in the compressed array
 	 color = Graph[col].color;
-	 CSR.value().push_back( source[i].derivative(col) );
+	 CSR.value().push_back( source[i].derivative(color) );
       }
    }
 
@@ -374,11 +374,6 @@ void Seeding::Init ()
    }
 }
 
-void Seeding::Initialize_CSR ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn )
-{
-
-
-}
 
 /*
  * Get_Max_Color()

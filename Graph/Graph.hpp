@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <algorithm>
+#include "CSR_Matrix.hpp"
 
 using std::size_t;
 using std::vector;
@@ -37,13 +38,24 @@ class Seeding
    typedef vector< __vertex_type > graph_type;
    graph_type Graph;
 
+   /*
+    * compressed storage type
+    * Currently hard-coded as CSR matrix.
+    *
+    * Proposed:
+    * template parameter.
+    */
+   typedef GENSOL::CSR_Matrix<double,int> CSR_Matrix;
+   CSR_Matrix CSR;
+
+
 public:
    // policy can be added to tackle with various discretization domains
    inline void Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn = 1 );
    inline void Coloring ();
-   inline void Recovery ( const vector<double>& old_value,
-			  vector<int>& new_rowptr,
-			  vector<int>& new_colind, vector<double>& new_value );
+
+   template< typename T >
+   inline void Recovery ( const T& source, CSR_Matrix& CSR );
 
    // data access
    color_t Color ( index_t i ) const;
@@ -54,6 +66,7 @@ public:
 private:
    inline void Sort ();
    inline void Init ();
+   inline void Initialize_CSR ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn );
    inline size_t Get_Max_Color () const;
 };
 
@@ -160,6 +173,9 @@ void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t 
     
    // Sort "connection"
    Sort();
+
+   // Initialize CSR_Matrix
+   Initialize_CSR( _Nx, _Ny, _Nz, _n_eqn );
 }
 
 
@@ -241,35 +257,67 @@ void Seeding::Coloring ()
  * Then this "compressed" version of data is modified so that the values
  * sit into their real positions
  */
-void Seeding::Recovery( const vector<double>& old_value,
-			vector<int>& new_rowptr,
-			vector<int>& new_colind, vector<double>& new_value )
+template< typename T, typename V, typename M >
+void Seeding::Recover_CSR ( const T& source, V& residual, M& CSR )
 {
-   new_rowptr.clear();
-   new_rowptr.reserve( Graph.size() );
-   new_colind.clear();
-   // ...
-   new_value.clear();
-   new_value.reserve( old_value.size() );
-
-   size_t counter_nnz = 0;
-   new_rowptr.push_back( counter_nnz );
-   for( size_t i = 0; i < Graph.size(); ++i )
+   // update CSR.rowptr() & CSR.colptr() ONLY for the first time
+   if( CSR.rowptr.empty() )
    {
-      for( size_t j = 0; j < Graph[i].connection.size(); ++j )
-      {
-	 index_t col = Graph[i].connection[j];
-	 new_colind.push_back( col ); // copy...faster?
+      if( !CSR.rowptr().is_empty() )
+	 CSR.rowptr().clear();
+      CSR.rowptr().reserve( Graph.size() + 1 );
 
-	 // "color" tells which column it is in the compressed array
-	 color_t color = Graph[col].color;
-	 new_value.push_back( old_value[ counter_nnz + color ] );
+      if( !CSR.colind().is_empty() )
+	 CSR.colind().clear();
+      // CSR.colind().reserve( NNZ );
+
+      // CSR.value() will be taken care of in "Recovery()"
+
+      size_t counter_nnz = 0;
+      CSR.rowptr().push_back( counter_nnz );
+      std::cout << "counter_nnz: " << counter_nnz << std::endl;
+
+      for( size_t i = 0; i < Graph.size(); ++i )
+      {
+	 index_t col;
+	 for( size_t j = 0; j < Graph[i].connection.size(); ++j )
+	 {
+	    col = Graph[i].connection[j];
+	    CSR.colind().push_back( col );
+	 }
+	 counter_nnz += Graph[i].connection.size();
+	 CSR.rowptr().push_back( counter_nnz );
+
+	 std::cout << "counter_nnz: " << counter_nnz << std::endl;
       }
 
-      counter_nnz += Graph[i].connection.size();
-      new_rowptr.push_back( counter_nnz );
-
    }
+
+
+   // update residual & CSR.value()
+   residual.resize( CSR.rowptr().size() );
+
+   if( !CSR.value().is_empty() )
+      CSR.value().clear();
+   CSR.value().reserve( CSR.colind().size() );
+
+   index_t col;
+   color_t color;
+   for( size_t i = 0; i < Graph.size(); ++i )
+   {
+      residual[i] = source[i].value();
+      for( size_t j = 0; j < Graph[i].connection.size(); ++j )
+      {
+	 col = Graph[i].connection[j];
+	 // "color" tells which column it ivoids in the compressed array
+	 color = Graph[col].color;
+	 CSR.value().push_back( source[i].derivative(col) );
+      }
+   }
+
+   CSR.M() = CSR.rowptr().size() - 1;
+   CSR.N() = CSR.colind().size() - 1;
+   CSR.NNZ() = CSR.value().size();
 }
 
 
@@ -324,6 +372,12 @@ void Seeding::Init ()
       Graph[ distance1_vertex ].assign_color(color);
       ++color;
    }
+}
+
+void Seeding::Initialize_CSR ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn )
+{
+
+
 }
 
 /*

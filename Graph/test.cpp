@@ -20,15 +20,16 @@ int main()
    std::size_t Nx = 5;
    std::size_t Ny = 1;
    std::size_t Nz = 1;
+   std::size_t Neqn = 2;
 
    Seeding S;
     
-   S.Build_BipartiteGraph( Nx, Ny, Nz );
+   S.Build_BipartiteGraph( Nx, Ny, Nz, Neqn);
    S.Coloring();
    S.Print();
 
 
-   std::size_t N = Nx * Ny * Nz;
+   std::size_t N = Nx * Ny * Nz * Neqn;
    ADvector vec1, vec2;
    vec1.resize( N );
    vec2.resize( N );
@@ -39,19 +40,32 @@ int main()
    }
 
 
-   // [ 5 1 1 ] Case #1
-   vec2[0] = vec1[0] + vec1[1];
-   vec2[1] = vec1[0] + vec1[1] + vec1[2];
-   vec2[2] = vec1[1] + vec1[2] + vec1[3];
-   vec2[3] = vec1[2] + vec1[3] + vec1[4];
-   vec2[4] = vec1[3] + vec1[4];
+   // [ 5 1 1 2 ]
+   vec2[0] = vec1[0] + vec1[1] + vec1[2] + vec1[3];
+   vec2[1] = vec1[0] + vec1[1] + vec1[2] + vec1[3];
+   vec2[2] = vec1[0] + vec1[1] + vec1[2] + vec1[3] + vec1[4] + vec1[5];
+   vec2[3] = vec1[0] + vec1[1] + vec1[2] + vec1[3] + vec1[4] + vec1[5];
+   vec2[4] = vec1[2] + vec1[3] + vec1[4] + vec1[5] + vec1[6] + vec1[7];
+   vec2[5] = vec1[2] + vec1[3] + vec1[4] + vec1[5] + vec1[6] + vec1[7];
+   vec2[6] = vec1[4] + vec1[5] + vec1[6] + vec1[7] + vec1[8] + vec1[9];
+   vec2[7] = vec1[4] + vec1[5] + vec1[6] + vec1[7] + vec1[8] + vec1[9];
+   vec2[8] = vec1[6] + vec1[7] + vec1[8] + vec1[9];
+   vec2[9] = vec1[6] + vec1[7] + vec1[8] + vec1[9];
 
-   // [ 5 1 1 ] Case #2
-   vec2[0] = vec1[0];
-   vec2[1] = vec1[0] + vec1[1];
-   vec2[2] = vec1[1] + vec1[2];
-   vec2[3] = vec1[2] + vec1[3];
-   vec2[4] = vec1[3] + vec1[4];
+
+   // // [ 5 1 1 ] Case #1
+   // vec2[0] = vec1[0] + vec1[1];
+   // vec2[1] = vec1[0] + vec1[1] + vec1[2];
+   // vec2[2] = vec1[1] + vec1[2] + vec1[3];
+   // vec2[3] = vec1[2] + vec1[3] + vec1[4];
+   // vec2[4] = vec1[3] + vec1[4];
+
+   // // [ 5 1 1 ] Case #2
+   // vec2[0] = vec1[0];
+   // vec2[1] = vec1[0] + vec1[1];
+   // vec2[2] = vec1[1] + vec1[2];
+   // vec2[3] = vec1[2] + vec1[3];
+   // vec2[4] = vec1[3] + vec1[4];
 
    // [ 5 2 1 ]
    // vec2[0] = vec1[0] + vec1[1] + vec1[5];

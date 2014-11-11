@@ -7,8 +7,8 @@
 using std::size_t;
 using std::vector;
 
-typedef int color_t;
-typedef size_t index_t;
+typedef int           color_t;
+typedef size_t        index_t;
 
 class Seeding
 {
@@ -59,6 +59,7 @@ public:
 
    // data access
    color_t Color ( index_t i ) const;
+   size_t Max_Color () const;
 
 
    void Print ();
@@ -66,7 +67,7 @@ public:
 private:
    inline void Sort ();
    inline void Init ();
-   inline size_t Get_Max_Color () const;
+   inline size_t Theoretical_MaxColor () const;
 };
 
 
@@ -94,17 +95,21 @@ void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t 
 	 for ( index_t i = 0; i < _Nx-1; ++i )
 	 {
 	    block_row = i + j*_Nx + k*_Nx*_Ny;
-	    block_block_col = row + 1;
-	    Graph[block_row].assign(-1, block_col);
-	    Graph[block_col].assign(-1, block_row);
+	    block_col = block_row + 1;
                 
-//                block_row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
-//                block_col = ( block_row + 1 ) * _n_eqn;
-//                for( m = 0; m < _n_eqn; ++m )
-//                {
-//                    Graph[block_row+m].assign(-1, block_col+m);
-//                    Graph[block_col+m].assign(-1, block_row+m);
-//                }
+	    for( index_t r = 0; r < _Neqn; ++r )
+	    {
+	       index_t row = block_row * _Neqn + r;
+	       index_t col;
+
+	       size_t Nvar = _Neqn;
+	       for( index_t c = 0; c < Nvar; ++c )
+	       {
+		  col = block_col * Nvar + c;
+		  Graph[row].assign(-1, col);
+		  Graph[col].assign(-1, row);
+	       }
+	    }
 	 }
       }
    }
@@ -117,16 +122,20 @@ void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t 
 	 {
 	    block_row = i + j*_Nx + k*_Nx*_Ny;
 	    block_col = block_row + _Nx;
-	    Graph[block_row].assign(-1, block_col);
-	    Graph[block_col].assign(-1, block_row);
                 
-//                block_row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
-//                block_col = ( block_row + _Nx ) * _n_eqn;
-//                for( m = 0; m < _n_eqn; ++m )
-//                {
-//                    Graph[block_row+m].assign(-1, block_col+m);
-//                    Graph[block_col+m].assign(-1, block_row+m);
-//                }
+	    for( index_t r = 0; r < _Neqn; ++r )
+	    {
+	       index_t row = block_row * _Neqn + r;
+	       index_t col;
+
+	       size_t Nvar = _Neqn;
+	       for( index_t c = 0; c < Nvar; ++c )
+	       {
+		  col = block_col * Nvar + c;
+		  Graph[row].assign(-1, col);
+		  Graph[col].assign(-1, row);
+	       }
+	    }
 	 }
       }
    }
@@ -139,16 +148,20 @@ void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t 
 	 {
 	    block_row = i + j*_Nx + k*_Nx*_Ny;
 	    block_col = block_row + _Nx * _Ny;
-	    Graph[block_row].assign(-1, block_col);
-	    Graph[block_col].assign(-1, block_row);
                 
-//                block_row = ( i + j*_Nx + k*_Nx*_Ny ) * _n_eqn;
-//                block_col = ( block_row + _Nx * _Ny ) * _n_eqn;
-//                for( m = 0; m < _n_eqn; ++m )
-//                {
-//                    Graph[block_row+m].assign(-1, block_col+m);
-//                    Graph[block_col+m].assign(-1, block_row+m);
-//                }
+	    for( index_t r = 0; r < _Neqn; ++r )
+	    {
+	       index_t row = block_row * _Neqn + r;
+	       index_t col;
+
+	       size_t Nvar = _Neqn;
+	       for( index_t c = 0; c < Nvar; ++c )
+	       {
+		  col = block_col * Nvar + c;
+		  Graph[row].assign(-1, col);
+		  Graph[col].assign(-1, row);
+	       }
+	    }
 
 	 }
       }
@@ -158,28 +171,34 @@ void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t 
    {
       block_row = i;
       block_col = block_row;
-      Graph[block_row].assign(-1, block_col);
-        
-//        block_row = i * _n_eqn;
-//        block_col = block_row;
-//        for( m = 0; m < _n_eqn; ++m )
-//        {
-//            Graph[block_row+m].assign(-1, block_col+m);
-//            Graph[block_col+m].assign(-1, block_row+m);
-//        }
+
+      for( index_t r = 0; r < _Neqn; ++r )
+      {
+	 index_t row = block_row * _Neqn + r;
+	 index_t col;
+
+	 size_t Nvar = _Neqn;
+	 for( index_t c = 0; c < Nvar; ++c )
+	 {
+	    col = block_col * Nvar + c;
+	    Graph[row].assign( -1, col );
+	 }
+      }
    }
     
    // Sort "connection"
+   std::cout << "sorting..." << std::endl;
    Sort();
 }
 
 
 void Seeding::Coloring ()
 {
+   std::cout << "Coloring..." << std::endl;
    // initialize colors
    Init();
 
-   const size_t max_color = Get_Max_Color();
+   const size_t max_color = Theoretical_MaxColor();
    vector<bool> Palette;
    Palette.resize( max_color );
    Palette.assign( max_color, true );
@@ -322,10 +341,19 @@ void Seeding::Recover_CSR ( const T& source, V& residual, M& CSR )
 
 
 
-
 color_t Seeding::Color ( index_t i ) const
 {
    return Graph[i].color;
+}
+
+size_t Seeding::Max_Color () const
+{
+   size_t counter = 0;
+   for( index_t i = 0; i < Graph.size(); ++ i )
+   {
+      counter = ( counter >= Graph[i].color ) ? counter : Graph[i].color;
+   }
+   return counter;
 }
 
 
@@ -360,7 +388,7 @@ void Seeding::Sort ()
  */
 void Seeding::Init ()
 {
-   size_t max_color = Get_Max_Color();
+   size_t max_color = Theoretical_MaxColor();
     
    color_t color(0);
    graph_type :: const_iterator iter = Graph.begin();
@@ -379,7 +407,7 @@ void Seeding::Init ()
  * Get_Max_Color()
  * Get the upper bound of colors to be assinged to vertices
  */
-size_t Seeding::Get_Max_Color () const
+size_t Seeding::Theoretical_MaxColor () const
 {
    size_t max_degree = 0;
    size_t tmp;
@@ -390,8 +418,9 @@ size_t Seeding::Get_Max_Color () const
       tmp = Graph[i].connection.size();
       max_degree = ( max_degree >= tmp ) ? max_degree : tmp;
    }
-   max_degree = max_degree * max_degree + 1;
-   return ( max_degree <= N ? max_degree : N );
+   size_t upper_bound = max_degree * max_degree + 1;
+   std::cout << "max_degree = " << max_degree << std::endl;
+   return ( upper_bound <= N ? upper_bound : N );
 }
 // ============== end of private functions ====================
 // ============================================================
@@ -418,15 +447,18 @@ void Print_Vector ( const T& vec )
 void Seeding::Print ()
 {
    std::cout << "*********** Graph Summary ************"<< std::endl;
-   for ( index_t i = 0; i < Graph.size(); ++i )
-   {
-      std::cout << "-------- " << i << " ------> Color: " << Graph[i].color << std::endl;
-      size_t sz = Graph[i].connection.size();
-      for ( index_t j = 0; j < sz; ++j )
-      {
-	 std::cout << Graph[i].connection[j] << std::endl;
-      }
-   }
+   std::cout << "Graph.size() = " << Graph.size() << std::endl;
+   std::cout << "Theoretical Max Color = " << Theoretical_MaxColor() << std::endl;
+   std::cout << "Max Color = " << Max_Color() << std::endl;
+   // for ( index_t i = 0; i < Graph.size(); ++i )
+   // {
+   //    std::cout << "-------- " << i << " ------> Color: " << Graph[i].color << std::endl;
+   //    size_t sz = Graph[i].connection.size();
+   //    for ( index_t j = 0; j < sz; ++j )
+   //    {
+   // 	 std::cout << Graph[i].connection[j] << std::endl;
+   //    }
+   // }
 }
 
 

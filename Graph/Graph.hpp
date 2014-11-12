@@ -18,19 +18,15 @@ class Seeding
       vector<index_t> connection;
     
       void assign_color ( color_t _color )
-      {
-	 color = _color;
-      }
-    
+      { color = _color; }
+
       void assign_vertex ( index_t _vertex_index )
-      {
-	 connection.push_back(_vertex_index);
-      }
-    
+      { connection.push_back( _vertex_index ); }
+
       void assign ( color_t _color, index_t _vertex_index )
       {
-	 assign_color(_color);
-	 assign_vertex(_vertex_index);
+	 assign_color( _color );
+	 assign_vertex( _vertex_index );
       }
    };
 
@@ -38,20 +34,11 @@ class Seeding
    typedef vector< __vertex_type > graph_type;
    graph_type Graph;
 
-   /*
-    * compressed storage type
-    * Currently hard-coded as CSR matrix.
-    *
-    * Proposed:
-    * template parameter.
-    */
-   typedef GENSOL::CSR_Matrix<double,int> CSR_Matrix;
-   CSR_Matrix CSR;
 
 
 public:
-   // policy can be added to tackle with various discretization domains
-   inline void Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _n_eqn = 1 );
+   Seeding ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _Neqn = 1 );
+
    inline void Coloring ();
 
    template< typename T, typename V, typename M >
@@ -65,9 +52,11 @@ public:
    void Print ();
 
 private:
-   inline void Sort ();
-   inline void Init ();
-   inline size_t Theoretical_MaxColor () const;
+   // policy can be added to tackle with various discretization domains
+   inline void   __Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _Neqn );
+   inline void   __Sort_Vertex_Connection ();
+   inline void   __Initialize_Colors ();
+   inline size_t __Theoretical_MaxColor () const;
 };
 
 
@@ -77,118 +66,10 @@ private:
 // ========================================================= 
 // ===================== public functions ==================
 //
-void Seeding::Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _Neqn )
+Seeding::Seeding ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _Neqn )
 {
-   if ( !Graph.empty() )
-   {
-      Graph.clear();
-   }
-   const size_t n_cells = _Nx * _Ny * _Nz;
-   Graph.resize( n_cells * _Neqn );
-
-   index_t block_row, block_col;
-   // 1st direction in all layers
-   for ( index_t k = 0; k < _Nz; ++k )
-   {
-      for ( index_t j = 0; j < _Ny; ++j )
-      {
-	 for ( index_t i = 0; i < _Nx-1; ++i )
-	 {
-	    block_row = i + j*_Nx + k*_Nx*_Ny;
-	    block_col = block_row + 1;
-                
-	    for( index_t r = 0; r < _Neqn; ++r )
-	    {
-	       index_t row = block_row * _Neqn + r;
-	       index_t col;
-
-	       size_t Nvar = _Neqn;
-	       for( index_t c = 0; c < Nvar; ++c )
-	       {
-		  col = block_col * Nvar + c;
-		  Graph[row].assign(-1, col);
-		  Graph[col].assign(-1, row);
-	       }
-	    }
-	 }
-      }
-   }
-   // 2nd direction in all layers
-   for ( index_t k = 0; k < _Nz; ++k )
-   {
-      for ( index_t j = 0; j < _Ny-1; ++j )
-      {
-	 for ( index_t i = 0; i < _Nx; ++i )
-	 {
-	    block_row = i + j*_Nx + k*_Nx*_Ny;
-	    block_col = block_row + _Nx;
-                
-	    for( index_t r = 0; r < _Neqn; ++r )
-	    {
-	       index_t row = block_row * _Neqn + r;
-	       index_t col;
-
-	       size_t Nvar = _Neqn;
-	       for( index_t c = 0; c < Nvar; ++c )
-	       {
-		  col = block_col * Nvar + c;
-		  Graph[row].assign(-1, col);
-		  Graph[col].assign(-1, row);
-	       }
-	    }
-	 }
-      }
-   }
-   // 3rd direction
-   for ( index_t k = 0; k < _Nz-1; ++k )
-   {
-      for ( index_t j = 0; j < _Ny; ++j )
-      {
-	 for ( index_t i = 0; i < _Nx; ++i )
-	 {
-	    block_row = i + j*_Nx + k*_Nx*_Ny;
-	    block_col = block_row + _Nx * _Ny;
-                
-	    for( index_t r = 0; r < _Neqn; ++r )
-	    {
-	       index_t row = block_row * _Neqn + r;
-	       index_t col;
-
-	       size_t Nvar = _Neqn;
-	       for( index_t c = 0; c < Nvar; ++c )
-	       {
-		  col = block_col * Nvar + c;
-		  Graph[row].assign(-1, col);
-		  Graph[col].assign(-1, row);
-	       }
-	    }
-
-	 }
-      }
-   }
-   // Itself
-   for ( index_t i = 0; i < n_cells; ++i )
-   {
-      block_row = i;
-      block_col = block_row;
-
-      for( index_t r = 0; r < _Neqn; ++r )
-      {
-	 index_t row = block_row * _Neqn + r;
-	 index_t col;
-
-	 size_t Nvar = _Neqn;
-	 for( index_t c = 0; c < Nvar; ++c )
-	 {
-	    col = block_col * Nvar + c;
-	    Graph[row].assign( -1, col );
-	 }
-      }
-   }
-    
-   // Sort "connection"
-   std::cout << "sorting..." << std::endl;
-   Sort();
+   __Build_BipartiteGraph( _Nx, _Ny, _Nz, _Neqn );
+   Coloring();
 }
 
 
@@ -196,9 +77,9 @@ void Seeding::Coloring ()
 {
    std::cout << "Coloring..." << std::endl;
    // initialize colors
-   Init();
+   __Initialize_Colors();
 
-   const size_t max_color = Theoretical_MaxColor();
+   const size_t max_color = __Theoretical_MaxColor();
    vector<bool> Palette;
    Palette.resize( max_color );
    Palette.assign( max_color, true );
@@ -277,6 +158,7 @@ void Seeding::Recover_CSR ( const T& source, V& residual, M& CSR )
 {
    static bool is_first = true;
    std::cout << "is_first\t" << is_first << std::endl;
+
    // update CSR.rowptr() & CSR.colptr() ONLY for the first time
    if( is_first )
    {
@@ -328,7 +210,7 @@ void Seeding::Recover_CSR ( const T& source, V& residual, M& CSR )
       for( size_t j = 0; j < Graph[i].connection.size(); ++j )
       {
 	 col = Graph[i].connection[j];
-	 // "color" tells which column it ivoids in the compressed array
+	 // "color" tells which column it sits in the compressed array
 	 color = Graph[col].color;
 	 CSR.value().push_back( source[i].derivative(color) );
       }
@@ -367,11 +249,126 @@ size_t Seeding::Max_Color () const
 // ==========================================================
 // ================= private functions ======================
 /*
+ * Build_BipartiteGraph
+ * Current implementation:
+ * Natural ordering / Cartesian
+ */
+void Seeding::__Build_BipartiteGraph ( size_t _Nx, size_t _Ny, size_t _Nz, size_t _Neqn )
+{
+   if ( !Graph.empty() )
+   {
+      Graph.clear();
+   }
+   const size_t n_cells = _Nx * _Ny * _Nz;
+   Graph.resize( n_cells * _Neqn );
+
+   index_t block_row, block_col;
+   index_t row, col;
+   size_t Nvar;
+
+   // 1st direction in all layers
+   for ( index_t k = 0; k < _Nz; ++k )
+   {
+      for ( index_t j = 0; j < _Ny; ++j )
+      {
+	 for ( index_t i = 0; i < _Nx-1; ++i )
+	 {
+	    block_row = i + j*_Nx + k*_Nx*_Ny;
+	    block_col = block_row + 1;
+                
+	    for( index_t r = 0; r < _Neqn; ++r )
+	    {
+	       row = block_row * _Neqn + r;
+	       Nvar = _Neqn;
+	       for( index_t c = 0; c < Nvar; ++c )
+	       {
+		  col = block_col * Nvar + c;
+		  Graph[row].assign(-1, col);
+		  Graph[col].assign(-1, row);
+	       }
+	    }
+	 }
+      }
+   }
+   // 2nd direction in all layers
+   for ( index_t k = 0; k < _Nz; ++k )
+   {
+      for ( index_t j = 0; j < _Ny-1; ++j )
+      {
+	 for ( index_t i = 0; i < _Nx; ++i )
+	 {
+	    block_row = i + j*_Nx + k*_Nx*_Ny;
+	    block_col = block_row + _Nx;
+                
+	    for( index_t r = 0; r < _Neqn; ++r )
+	    {
+	       row = block_row * _Neqn + r;
+	       Nvar = _Neqn;
+	       for( index_t c = 0; c < Nvar; ++c )
+	       {
+		  col = block_col * Nvar + c;
+		  Graph[row].assign(-1, col);
+		  Graph[col].assign(-1, row);
+	       }
+	    }
+	 }
+      }
+   }
+   // 3rd direction
+   for ( index_t k = 0; k < _Nz-1; ++k )
+   {
+      for ( index_t j = 0; j < _Ny; ++j )
+      {
+	 for ( index_t i = 0; i < _Nx; ++i )
+	 {
+	    block_row = i + j*_Nx + k*_Nx*_Ny;
+	    block_col = block_row + _Nx * _Ny;
+                
+	    for( index_t r = 0; r < _Neqn; ++r )
+	    {
+	       row = block_row * _Neqn + r;
+	       Nvar = _Neqn;
+	       for( index_t c = 0; c < Nvar; ++c )
+	       {
+		  col = block_col * Nvar + c;
+		  Graph[row].assign(-1, col);
+		  Graph[col].assign(-1, row);
+	       }
+	    }
+
+	 }
+      }
+   }
+   // Itself
+   for ( index_t i = 0; i < n_cells; ++i )
+   {
+      block_row = i;
+      block_col = block_row;
+
+      for( index_t r = 0; r < _Neqn; ++r )
+      {
+	 row = block_row * _Neqn + r;
+	 Nvar = _Neqn;
+	 for( index_t c = 0; c < Nvar; ++c )
+	 {
+	    col = block_col * Nvar + c;
+	    Graph[row].assign( -1, col );
+	 }
+      }
+   }
+    
+   __Sort_Vertex_Connection();
+}
+
+
+
+
+/*
  * Sort()
  * Sort the "connection" vector associated with each vertex
  * to provide convenience & efficient in following operations
  */
-void Seeding::Sort ()
+void Seeding::__Sort_Vertex_Connection ()
 {
    vector<index_t>::iterator iter_begin, iter_end;
    for ( index_t i = 0; i < Graph.size(); ++i )
@@ -386,9 +383,9 @@ void Seeding::Sort ()
  * Init()
  * Assign colors to vertices that are distance-1 to the very 1st vertex
  */
-void Seeding::Init ()
+void Seeding::__Initialize_Colors ()
 {
-   size_t max_color = Theoretical_MaxColor();
+   size_t max_color = __Theoretical_MaxColor();
     
    color_t color(0);
    graph_type :: const_iterator iter = Graph.begin();
@@ -407,7 +404,7 @@ void Seeding::Init ()
  * Get_Max_Color()
  * Get the upper bound of colors to be assinged to vertices
  */
-size_t Seeding::Theoretical_MaxColor () const
+size_t Seeding::__Theoretical_MaxColor () const
 {
    size_t max_degree = 0;
    size_t tmp;
@@ -419,7 +416,7 @@ size_t Seeding::Theoretical_MaxColor () const
       max_degree = ( max_degree >= tmp ) ? max_degree : tmp;
    }
    size_t upper_bound = max_degree * max_degree + 1;
-   std::cout << "max_degree = " << max_degree << std::endl;
+   //std::cout << "max_degree = " << max_degree << std::endl;
    return ( upper_bound <= N ? upper_bound : N );
 }
 // ============== end of private functions ====================
@@ -448,7 +445,7 @@ void Seeding::Print ()
 {
    std::cout << "*********** Graph Summary ************"<< std::endl;
    std::cout << "Graph.size() = " << Graph.size() << std::endl;
-   std::cout << "Theoretical Max Color = " << Theoretical_MaxColor() << std::endl;
+   std::cout << "Theoretical Max Color = " << __Theoretical_MaxColor() << std::endl;
    std::cout << "Max Color = " << Max_Color() << std::endl;
    // for ( index_t i = 0; i < Graph.size(); ++i )
    // {

@@ -2,11 +2,11 @@
 #include <iostream>
 #include "Graph.hpp"
 
-#include "/home/blackicefc/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
-#include "/home/blackicefc/ADETL_DISTRO/adetl/systems/ADvector.hpp"
+//#include "/home/blackicefc/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
+//#include "/home/blackicefc/ADETL_DISTRO/adetl/systems/ADvector.hpp"
 
-//#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
-//#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/systems/ADvector.hpp"
+#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/scalars/ADscalar.hpp"
+#include "/home/chenfang/Library/AD_Library/ADETL_DISTRO/adetl/systems/ADvector.hpp"
 
 
 typedef adetl::ADscalar<> ADscalar;
@@ -18,14 +18,11 @@ using std::vector;
 int main()
 {
    std::size_t Nx = 5;
-   std::size_t Ny = 1;
-   std::size_t Nz = 1;
+   std::size_t Ny = 5;
+   std::size_t Nz = 5;
    std::size_t Neqn = 2;
 
-   Seeding S;
-    
-   S.Build_BipartiteGraph( Nx, Ny, Nz, Neqn);
-   S.Coloring();
+   Seeding S( Nx, Ny, Nz, Neqn );
    S.Print();
 
 

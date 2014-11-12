@@ -3,8 +3,8 @@ GFLAGS=-Wall -g -std=c++11 -O3 -DNDEBUG -w
 
 
 #SUPERLUINC= -I../../SuperLU_MT_2.1
-ADETLINC = -I /home/blackicefc/ADETL_DISTRO
-#ADETLINC = -I /home/chenfang/Library/AD_Library/ADETL_DISTRO
+#ADETLINC = -I /home/blackicefc/ADETL_DISTRO
+ADETLINC = -I /home/chenfang/Library/AD_Library/ADETL_DISTRO
 
 SRC = ./*.cpp
 
